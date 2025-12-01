@@ -48,20 +48,66 @@ app.get('/sales', async (req, res) => {
     }
 });
 
+// Mock MVola Payment
+async function processPayment(phoneNumber, amount) {
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    // 90% success rate
+    return Math.random() < 0.9;
+}
+
 app.post('/sales', async (req, res) => {
-    const { productId, quantity, totalPrice } = req.body;
+    const { productId, quantity, mvolaNumber } = req.body;
     try {
+        // Fetch product details from product-service
+        const productRes = await fetch(`http://product-service:3001/products/${productId}`);
+        if (!productRes.ok) {
+            return res.status(404).json({ error: 'Product not found' });
+        }
+        const product = await productRes.json();
+
+        const totalPrice = product.discountPrice ? product.discountPrice * quantity : product.price * quantity;
+        const commissionRate = 0.05; // 5% default
+        const commission = totalPrice * commissionRate;
+        const merchantId = product.merchantId || 1;
+
+        // Process Payment
+        const paymentSuccess = await processPayment(mvolaNumber, totalPrice);
+        const status = paymentSuccess ? 'COMPLETED' : 'FAILED';
+
+        if (!paymentSuccess) {
+            return res.status(400).json({ error: 'Payment failed' });
+        }
+
         const sale = await prisma.sale.create({
             data: {
                 productId: parseInt(productId),
                 quantity: parseInt(quantity),
                 totalPrice: parseFloat(totalPrice),
+                merchantId: merchantId,
+                commission: parseFloat(commission),
+                status: status,
+                mvolaNumber: mvolaNumber
             },
         });
+
         res.status(201).json(sale);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error creating sale' });
+    }
+});
+
+// Get sales by merchant
+app.get('/sales/merchant/:merchantId', async (req, res) => {
+    try {
+        const sales = await prisma.sale.findMany({
+            where: { merchantId: parseInt(req.params.merchantId) },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.json(sales);
+    } catch (error) {
+        res.status(500).json({ error: 'Error fetching merchant sales' });
     }
 });
 

@@ -54,6 +54,9 @@ services:
     environment:
       DATABASE_URL: "mysql://root:rootpassword@mysql:3306/product_db"
       KAFKA_BROKER: "kafka:29092"
+      CLOUDINARY_CLOUD_NAME: "dbubs35pu"
+      CLOUDINARY_API_KEY: "972615442129422"
+      CLOUDINARY_SECRET: "TILHc9ErEqfQAK9fG_wzKfRgBoU"
     depends_on:
       - mysql
       - kafka
@@ -70,6 +73,30 @@ services:
     depends_on:
       - mysql
       - kafka
+    networks:
+      - microservices-net
+
+  user-service:
+    build: ./user-service
+    ports:
+      - "3003:3003"
+    environment:
+      DATABASE_URL: "mysql://root:password@user-db:3306/userdb"
+      JWT_SECRET: "supersecretkey"
+    depends_on:
+      - user-db
+    networks:
+      - microservices-net
+
+  user-db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: userdb
+    ports:
+      - "3307:3306"
+    volumes:
+      - user_db_data:/var/lib/mysql
     networks:
       - microservices-net
 
@@ -90,3 +117,4 @@ networks:
 
 volumes:
   mysql_data:
+  user_db_data:

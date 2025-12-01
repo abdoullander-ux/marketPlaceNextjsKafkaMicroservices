@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import Image from 'next/image';
 
+import { useRouter } from 'next/navigation';
+
 interface Product {
     id: number;
     name: string;
@@ -33,6 +35,31 @@ export default function ProductDetail({ product }: { product: Product }) {
     const [selectedImage, setSelectedImage] = useState(currentImages[0]);
     const [selectedSize, setSelectedSize] = useState(product.sizes[0]);
     const [quantity, setQuantity] = useState(1);
+    const router = useRouter();
+
+    const addToCart = (redirect = false) => {
+        const cartItem = {
+            id: product.id,
+            name: product.name,
+            price: product.discountPrice || product.price,
+            image: selectedImage,
+            color: selectedColor,
+            size: selectedSize,
+            quantity: quantity,
+            merchantId: (product as any).merchantId || 1 // Assuming merchantId might be missing in type definition
+        };
+
+        const storedCart = localStorage.getItem('cart');
+        const cart = storedCart ? JSON.parse(storedCart) : [];
+        cart.push(cartItem);
+        localStorage.setItem('cart', JSON.stringify(cart));
+
+        if (redirect) {
+            router.push('/cart');
+        } else {
+            alert('Added to cart!');
+        }
+    };
 
     const discountPercentage = product.originalPrice
         ? Math.round(((product.originalPrice - (product.discountPrice || product.price)) / product.originalPrice) * 100)
@@ -197,10 +224,14 @@ export default function ProductDetail({ product }: { product: Product }) {
 
                     {/* Actions */}
                     <div className="flex flex-col gap-3 mt-4">
-                        <button className="w-full bg-gradient-to-r from-red-600 to-red-500 text-white font-bold py-4 rounded-full hover:from-red-700 hover:to-red-600 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                        <button
+                            onClick={() => addToCart(true)}
+                            className="w-full bg-gradient-to-r from-red-600 to-red-500 text-white font-bold py-4 rounded-full hover:from-red-700 hover:to-red-600 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
                             Acheter maintenant
                         </button>
-                        <button className="w-full bg-gradient-to-r from-orange-100 to-orange-50 text-orange-600 font-bold py-4 rounded-full border-2 border-orange-200 hover:border-orange-300 hover:bg-orange-100 transition-all">
+                        <button
+                            onClick={() => addToCart(false)}
+                            className="w-full bg-gradient-to-r from-orange-100 to-orange-50 text-orange-600 font-bold py-4 rounded-full border-2 border-orange-200 hover:border-orange-300 hover:bg-orange-100 transition-all">
                             Ajouter au panier
                         </button>
                     </div>

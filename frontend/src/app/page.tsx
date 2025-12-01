@@ -23,7 +23,7 @@ export default async function Home() {
 
       <main>
         {/* Hero Banner */}
-        <div className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 text-white">
+        <div className="bg-gradient-to-r from-green-600 via-green-500 to-orange-400 text-white">
           <div className="max-w-7xl mx-auto px-4 py-16">
             <div className="grid md:grid-cols-2 gap-8 items-center">
               <div>
@@ -36,7 +36,7 @@ export default async function Home() {
                 <p className="text-lg mb-8 opacity-90">
                   Shop now and save big on electronics, fashion, home goods, and more!
                 </p>
-                <button className="bg-white text-orange-600 px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-100 transition shadow-lg">
+                <button className="bg-white text-green-700 px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-100 transition shadow-lg">
                   Shop Now →
                 </button>
               </div>
@@ -70,7 +70,7 @@ export default async function Home() {
 
         {/* Flash Deals */}
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white p-6 rounded-lg mb-8">
+          <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-6 rounded-lg mb-8">
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-3xl font-bold mb-2">⚡ Flash Deals</h2>
@@ -79,11 +79,11 @@ export default async function Home() {
               <div className="text-center">
                 <div className="text-sm mb-1">Ends in</div>
                 <div className="flex gap-2">
-                  <div className="bg-white text-red-600 px-3 py-2 rounded font-bold">12</div>
+                  <div className="bg-white text-orange-600 px-3 py-2 rounded font-bold">12</div>
                   <div className="text-2xl">:</div>
-                  <div className="bg-white text-red-600 px-3 py-2 rounded font-bold">34</div>
+                  <div className="bg-white text-orange-600 px-3 py-2 rounded font-bold">34</div>
                   <div className="text-2xl">:</div>
-                  <div className="bg-white text-red-600 px-3 py-2 rounded font-bold">56</div>
+                  <div className="bg-white text-orange-600 px-3 py-2 rounded font-bold">56</div>
                 </div>
               </div>
             </div>
@@ -190,7 +190,7 @@ export default async function Home() {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>© 2025 AliExpress Clone. All rights reserved. Built with Next.js & Microservices.</p>
+            <p>© 2025 MadaMarket. All rights reserved. Built with Next.js & Microservices.</p>
           </div>
         </div>
       </footer>

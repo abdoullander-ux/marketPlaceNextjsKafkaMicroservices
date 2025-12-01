@@ -12,5 +12,9 @@ model Sale {
   productId Int
   quantity  Int
   totalPrice Float
+  merchantId Int      @default(1)
+  commission Float    @default(0.0)
+  status     String   @default("PENDING") // PENDING, COMPLETED, FAILED
+  mvolaNumber String?
   createdAt DateTime @default(now())
 }

@@ -1,0 +1,28 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("BUYER") // BUYER, MERCHANT
+  createdAt DateTime @default(now())
+  
+  merchantProfile MerchantProfile?
+}
+
+model MerchantProfile {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @unique
+  user           User     @relation(fields: [userId], references: [id])
+  commissionRate Float    @default(5.0)
+  balance        Float    @default(0.0)
+  mvolaNumber    String?
+}
