@@ -1,0 +1,29 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id            Int      @id @default(autoincrement())
+  name          String
+  description   String   @db.Text
+  price         Float
+  originalPrice Float?
+  discountPrice Float?
+  rating        Float    @default(0)
+  reviewsCount  Int      @default(0)
+  soldCount     Int      @default(0)
+  stock         Int      @default(100)
+  category      String   @default("Other")
+  brand         String   @default("")
+  images        Json     // Storing as JSON array of strings ["url1", "url2"]
+  colors        Json     // Storing as JSON array of strings ["White", "Black"]
+  sizes         Json     // Storing as JSON array of strings ["S", "M", "L"]
+  tags          Json     // Storing as JSON array of strings ["trending", "sale"]
+  colorImages   Json?    // Storing as JSON object {"White": ["img1.jpg"], "Black": ["img2.jpg"]}
+  createdAt     DateTime @default(now())
+}

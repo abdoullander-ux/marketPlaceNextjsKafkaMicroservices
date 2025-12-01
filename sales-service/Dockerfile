@@ -1,0 +1,20 @@
+FROM node:20-alpine
+
+# Install OpenSSL and libc6-compat for Prisma
+RUN apk add --no-cache openssl libc6-compat
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm install
+
+COPY . .
+
+RUN npx prisma generate
+
+RUN chmod +x start.sh
+
+EXPOSE 3002
+
+CMD ["sh", "start.sh"]
