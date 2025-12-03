@@ -1,20 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Header() {
     const [searchQuery, setSearchQuery] = useState('');
-    const [user, setUser] = useState<any>(null);
     const router = useRouter();
-
-    useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
-    }, []);
+    const { isAuthenticated, user, login, logout, isLoading, isMerchant, isOwner } = useAuth();
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -42,24 +36,30 @@ export default function Header() {
                         <span>🎉 Welcome to MadaMarket!</span>
                         <span>📦 Free Shipping on orders over $50</span>
                     </div>
-                    <div className="flex gap-4">
-                        {user ? (
+                    <div className="flex gap-4 items-center">
+                        {isLoading ? (
+                            <span>Loading...</span>
+                        ) : isAuthenticated && user ? (
                             <>
-                                {user.role === 'MERCHANT' && (
-                                    <Link href="/merchant/dashboard" className="hover:underline font-bold">Merchant Dashboard</Link>
+                                <span className="font-semibold">👋 {user.name}</span>
+                                {isMerchant && (
+                                    <>
+                                        <span className="text-gray-200">|</span>
+                                        <Link href="/merchant/dashboard" className="hover:underline font-bold">Merchant Dashboard</Link>
+                                    </>
+                                )}
+                                {isOwner && (
+                                    <>
+                                        <span className="text-gray-200">|</span>
+                                        <Link href="/admin" className="hover:underline font-bold">Admin Panel</Link>
+                                    </>
                                 )}
                                 <span className="text-gray-200">|</span>
-                                <button onClick={() => {
-                                    localStorage.removeItem('token');
-                                    localStorage.removeItem('user');
-                                    setUser(null);
-                                    router.push('/');
-                                }} className="hover:underline">Logout</button>
+                                <button onClick={logout} className="hover:underline">Logout</button>
                             </>
                         ) : (
                             <>
-                                <Link href="/auth/login" className="hover:underline">Login</Link>
-                                <Link href="/auth/register" className="hover:underline">Register</Link>
+                                <button onClick={login} className="hover:underline">Login</button>
                             </>
                         )}
                     </div>

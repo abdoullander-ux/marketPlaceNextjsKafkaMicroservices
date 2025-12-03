@@ -1,16 +1,16 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { Kafka } = require('kafkajs');
-const cors = require('cors');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const { authenticateKeycloak, optionalAuth } = require('../shared/keycloak-middleware');
+const { requireMerchantOrOwner, requireOwnerOrAdmin } = require('../shared/authorization-middleware');
 
 const app = express();
 const prisma = new PrismaClient();
 const port = process.env.PORT || 3001;
 
-app.use(cors());
 app.use(express.json());
 
 // Cloudinary Configuration
@@ -351,8 +351,8 @@ async function seed(retries = 5) {
 
 
 // Routes
-// Image Upload Endpoint
-app.post('/upload', upload.array('images', 10), async (req, res) => {
+// Image Upload Endpoint - Protected (merchants and owners only)
+app.post('/upload', authenticateKeycloak, requireMerchantOrOwner, upload.array('images', 10), async (req, res) => {
     try {
         if (!req.files || req.files.length === 0) {
             return res.status(400).json({ error: 'No images uploaded' });
@@ -366,6 +366,7 @@ app.post('/upload', upload.array('images', 10), async (req, res) => {
     }
 });
 
+// Public endpoint - no authentication required
 app.get('/products', async (req, res) => {
     try {
         const products = await prisma.product.findMany();
@@ -466,7 +467,8 @@ app.get('/products/merchant/:merchantId', async (req, res) => {
     }
 });
 
-app.post('/products', async (req, res) => {
+// Protected endpoint - merchants and owners only
+app.post('/products', authenticateKeycloak, requireMerchantOrOwner, async (req, res) => {
     const { name, description, price, originalPrice, discountPrice, category, brand, stock, images, colors, sizes, tags, merchantId } = req.body;
     try {
         const product = await prisma.product.create({
@@ -506,8 +508,13 @@ app.post('/products', async (req, res) => {
     }
 });
 
-// Update product
-app.put('/products/:id', async (req, res) => {
+// Update product - Protected (owner or merchant who owns the product)
+app.put('/products/:id', authenticateKeycloak, requireOwnerOrAdmin(async (req) => {
+    const product = await prisma.product.findUnique({
+        where: { id: parseInt(req.params.id) }
+    });
+    return product?.merchantId;
+}), async (req, res) => {
     const { id } = req.params;
     const { name, description, price, originalPrice, discountPrice, category, brand, stock, images, colors, sizes, tags } = req.body;
 
@@ -546,8 +553,13 @@ app.put('/products/:id', async (req, res) => {
     }
 });
 
-// Delete product
-app.delete('/products/:id', async (req, res) => {
+// Delete product - Protected (owner or merchant who owns the product)
+app.delete('/products/:id', authenticateKeycloak, requireOwnerOrAdmin(async (req) => {
+    const product = await prisma.product.findUnique({
+        where: { id: parseInt(req.params.id) }
+    });
+    return product?.merchantId;
+}), async (req, res) => {
     const { id } = req.params;
     try {
         const product = await prisma.product.delete({

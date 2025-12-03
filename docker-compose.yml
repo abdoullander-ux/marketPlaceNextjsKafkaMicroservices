@@ -48,15 +48,19 @@ services:
       - microservices-net
 
   product-service:
-    build: ./product-service
+    build:
+      context: .
+      dockerfile: ./product-service/Dockerfile
     ports:
       - "3001:3001"
     environment:
-      DATABASE_URL: "mysql://root:rootpassword@mysql:3306/product_db"
-      KAFKA_BROKER: "kafka:29092"
-      CLOUDINARY_CLOUD_NAME: "dbubs35pu"
-      CLOUDINARY_API_KEY: "972615442129422"
-      CLOUDINARY_SECRET: "TILHc9ErEqfQAK9fG_wzKfRgBoU"
+      DATABASE_URL: "mysql://root:rootpassword@mysql:3306/marketplace"
+      CLOUDINARY_CLOUD_NAME: "${CLOUDINARY_CLOUD_NAME}"
+      CLOUDINARY_API_KEY: "${CLOUDINARY_API_KEY}"
+      CLOUDINARY_API_SECRET: "${CLOUDINARY_API_SECRET}"
+      KEYCLOAK_URL: "http://keycloak:8080"
+      KEYCLOAK_EXTERNAL_URL: "http://192.168.226.128:8081"
+      KEYCLOAK_REALM: "marketplace"
     depends_on:
       - mysql
       - kafka
@@ -64,12 +68,16 @@ services:
       - microservices-net
 
   sales-service:
-    build: ./sales-service
+    build:
+      context: .
+      dockerfile: ./sales-service/Dockerfile
     ports:
       - "3002:3002"
     environment:
-      DATABASE_URL: "mysql://root:rootpassword@mysql:3306/sales_db"
-      KAFKA_BROKER: "kafka:29092"
+      DATABASE_URL: "mysql://root:rootpassword@mysql:3306/marketplace"
+      KEYCLOAK_URL: "http://keycloak:8080"
+      KEYCLOAK_EXTERNAL_URL: "http://192.168.226.128:8081"
+      KEYCLOAK_REALM: "marketplace"
     depends_on:
       - mysql
       - kafka
@@ -83,8 +91,14 @@ services:
     environment:
       DATABASE_URL: "mysql://root:password@user-db:3306/userdb"
       JWT_SECRET: "supersecretkey"
+      KEYCLOAK_URL: "http://keycloak:8080"
+      KEYCLOAK_EXTERNAL_URL: "http://192.168.226.128:8081"
+      KEYCLOAK_REALM: "marketplace"
+      KEYCLOAK_ADMIN_USER: "admin"
+      KEYCLOAK_ADMIN_PASSWORD: "admin"
     depends_on:
       - user-db
+      - keycloak
     networks:
       - microservices-net
 
@@ -101,13 +115,57 @@ services:
       - microservices-net
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: "http://192.168.226.128:8080"
+        NEXT_PUBLIC_KEYCLOAK_URL: "http://192.168.226.128:8081"
+        NEXT_PUBLIC_KEYCLOAK_REALM: "marketplace"
+        NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: "marketplace-frontend"
     ports:
       - "3000:3000"
     environment:
-      NEXT_PUBLIC_API_URL: "http://localhost:8080"
+      NEXT_PUBLIC_API_URL: "http://192.168.226.128:8080"
+      API_URL: "http://nginx:80"
+      NEXT_PUBLIC_KEYCLOAK_URL: "http://192.168.226.128:8081"
+      KEYCLOAK_URL: "http://keycloak:8080"
+      NEXT_PUBLIC_KEYCLOAK_REALM: "marketplace"
+      NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: "marketplace-frontend"
     depends_on:
       - nginx
+      - keycloak
+    networks:
+      - microservices-net
+
+  keycloak-db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+    volumes:
+      - keycloak_db_data:/var/lib/postgresql/data
+    networks:
+      - microservices-net
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    command: start-dev
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: 8080
+      KC_HOSTNAME_STRICT: false
+      KC_HOSTNAME_STRICT_HTTPS: false
+      KC_HTTP_ENABLED: true
+    ports:
+      - "8081:8080"
+    depends_on:
+      - keycloak-db
     networks:
       - microservices-net
 
@@ -118,3 +176,4 @@ networks:
 volumes:
   mysql_data:
   user_db_data:
+  keycloak_db_data:

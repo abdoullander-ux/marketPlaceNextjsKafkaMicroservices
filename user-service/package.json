@@ -21,7 +21,9 @@
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.15.3",
-    "prisma": "^5.22.0"
+    "prisma": "^5.22.0",
+    "@keycloak/keycloak-admin-client": "^25.0.6",
+    "axios": "^1.7.9"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

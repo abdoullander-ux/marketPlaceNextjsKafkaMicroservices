@@ -3,31 +3,29 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function MerchantDashboard() {
     const router = useRouter();
-    const [user, setUser] = useState<any>(null);
+    const { user, isMerchant, isLoading, token } = useAuth();
     const [products, setProducts] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loadingProducts, setLoadingProducts] = useState(true);
 
     useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        if (!storedUser) {
-            router.push('/auth/login');
-            return;
+        if (!isLoading) {
+            if (!isMerchant) {
+                router.push('/');
+                return;
+            }
+            if (user?.id) {
+                fetchProducts(user.id);
+            }
         }
-        const parsedUser = JSON.parse(storedUser);
-        if (parsedUser.role !== 'MERCHANT') {
-            router.push('/');
-            return;
-        }
-        setUser(parsedUser);
-        fetchProducts(parsedUser.id);
-    }, []);
+    }, [user, isMerchant, isLoading, router]);
 
-    const fetchProducts = async (merchantId: number) => {
+    const fetchProducts = async (merchantId: string) => {
         try {
-            const res = await fetch(`http://localhost:8080/products/merchant/${merchantId}`);
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/merchant/${merchantId}`);
             if (res.ok) {
                 const data = await res.json();
                 setProducts(data);
@@ -35,7 +33,7 @@ export default function MerchantDashboard() {
         } catch (error) {
             console.error('Error fetching products:', error);
         } finally {
-            setLoading(false);
+            setLoadingProducts(false);
         }
     };
 
@@ -43,8 +41,11 @@ export default function MerchantDashboard() {
         if (!confirm('Are you sure you want to delete this product?')) return;
 
         try {
-            const res = await fetch(`http://localhost:8080/products/${productId}`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${productId}`, {
                 method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}` // Ideally send token for secured endpoints
+                }
             });
 
             if (res.ok) {
@@ -58,7 +59,15 @@ export default function MerchantDashboard() {
         }
     };
 
-    if (!user) return null;
+    if (isLoading || loadingProducts) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-xl font-semibold text-gray-600">Loading dashboard...</div>
+            </div>
+        );
+    }
+
+    if (!isMerchant) return null;
 
     return (
         <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -73,9 +82,7 @@ export default function MerchantDashboard() {
                     </Link>
                 </div>
 
-                {loading ? (
-                    <div className="text-center py-12">Loading...</div>
-                ) : products.length === 0 ? (
+                {products.length === 0 ? (
                     <div className="text-center py-12 bg-white rounded-lg shadow">
                         <p className="text-gray-500 mb-4">You haven't added any products yet.</p>
                         <Link

@@ -1,13 +1,13 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { Kafka } = require('kafkajs');
-const cors = require('cors');
+const { authenticateKeycloak } = require('../shared/keycloak-middleware');
+const { requireOwner, requireAnyGroup, requireMerchantOrOwner } = require('../shared/authorization-middleware');
 
 const app = express();
 const prisma = new PrismaClient();
 const port = process.env.PORT || 3002;
 
-app.use(cors());
 app.use(express.json());
 
 // Kafka Setup
@@ -38,8 +38,8 @@ async function connectKafka() {
 
 connectKafka();
 
-// Routes
-app.get('/sales', async (req, res) => {
+// Routes - Protected (owners only can see all sales)
+app.get('/sales', authenticateKeycloak, requireOwner, async (req, res) => {
     try {
         const sales = await prisma.sale.findMany();
         res.json(sales);
@@ -56,7 +56,8 @@ async function processPayment(phoneNumber, amount) {
     return Math.random() < 0.9;
 }
 
-app.post('/sales', async (req, res) => {
+// Create sale - Protected (clients and owners)
+app.post('/sales', authenticateKeycloak, requireAnyGroup(['client', 'owner']), async (req, res) => {
     const { productId, quantity, mvolaNumber } = req.body;
     try {
         // Fetch product details from product-service
@@ -87,7 +88,8 @@ app.post('/sales', async (req, res) => {
                 merchantId: merchantId,
                 commission: parseFloat(commission),
                 status: status,
-                mvolaNumber: mvolaNumber
+                mvolaNumber: mvolaNumber,
+                customerId: req.user.id // Add customer ID from token
             },
         });
 
@@ -98,11 +100,20 @@ app.post('/sales', async (req, res) => {
     }
 });
 
-// Get sales by merchant
-app.get('/sales/merchant/:merchantId', async (req, res) => {
+// Get sales by merchant - Protected (merchants can see their own, owners can see all)
+app.get('/sales/merchant/:merchantId', authenticateKeycloak, requireMerchantOrOwner, async (req, res) => {
     try {
+        const requestedMerchantId = parseInt(req.params.merchantId);
+        const userGroups = req.user.groups || [];
+        const isOwner = userGroups.some(g => g === '/owner' || g === 'owner');
+
+        // If not owner, can only see own sales
+        if (!isOwner && req.user.id !== requestedMerchantId.toString()) {
+            return res.status(403).json({ error: 'You can only view your own sales' });
+        }
+
         const sales = await prisma.sale.findMany({
-            where: { merchantId: parseInt(req.params.merchantId) },
+            where: { merchantId: requestedMerchantId },
             orderBy: { createdAt: 'desc' }
         });
         res.json(sales);

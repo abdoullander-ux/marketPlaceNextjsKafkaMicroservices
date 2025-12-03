@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function AddProduct() {
     const router = useRouter();
-    const [user, setUser] = useState<any>(null);
+    const { user, isMerchant, isLoading, token } = useAuth();
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState('');
@@ -24,18 +25,10 @@ export default function AddProduct() {
     });
 
     useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        if (!storedUser) {
-            router.push('/auth/login');
-            return;
-        }
-        const parsedUser = JSON.parse(storedUser);
-        if (parsedUser.role !== 'MERCHANT') {
+        if (!isLoading && !isMerchant) {
             router.push('/');
-            return;
         }
-        setUser(parsedUser);
-    }, []);
+    }, [isLoading, isMerchant, router]);
 
     const handleImageUpload = async (files: FileList | null) => {
         if (!files || files.length === 0) return;
@@ -49,8 +42,11 @@ export default function AddProduct() {
                 formData.append('images', file);
             });
 
-            const res = await fetch('http://localhost:3001/upload', {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload`, {
                 method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
                 body: formData,
             });
 
@@ -104,12 +100,15 @@ export default function AddProduct() {
                 images: uploadedImages,
                 colors: formData.colors.split(',').map(s => s.trim()).filter(s => s),
                 sizes: formData.sizes.split(',').map(s => s.trim()).filter(s => s),
-                merchantId: user.id,
+                merchantId: user?.id,
             };
 
-            const res = await fetch('http://localhost:3001/products', {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify(productData),
             });
 
@@ -125,7 +124,8 @@ export default function AddProduct() {
         }
     };
 
-    if (!user) return null;
+    if (isLoading) return <div className="p-8 text-center">Loading...</div>;
+    if (!isMerchant) return null;
 
     return (
         <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">

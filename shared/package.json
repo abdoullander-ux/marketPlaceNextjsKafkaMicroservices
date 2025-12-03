@@ -1,0 +1,10 @@
+{
+    "name": "shared",
+    "version": "1.0.0",
+    "description": "Shared middleware for Keycloak authentication",
+    "main": "keycloak-middleware.js",
+    "dependencies": {
+        "jsonwebtoken": "^9.0.2",
+        "jwks-rsa": "^3.1.0"
+    }
+}
