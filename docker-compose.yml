@@ -61,6 +61,7 @@ services:
       KEYCLOAK_URL: "http://keycloak:8080"
       KEYCLOAK_EXTERNAL_URL: "http://192.168.226.128:8081"
       KEYCLOAK_REALM: "marketplace"
+      KAFKA_BROKER: "kafka:29092"
     depends_on:
       - mysql
       - kafka
@@ -78,6 +79,7 @@ services:
       KEYCLOAK_URL: "http://keycloak:8080"
       KEYCLOAK_EXTERNAL_URL: "http://192.168.226.128:8081"
       KEYCLOAK_REALM: "marketplace"
+      KAFKA_BROKER: "kafka:29092"
     depends_on:
       - mysql
       - kafka

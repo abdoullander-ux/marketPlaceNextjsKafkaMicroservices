@@ -4,11 +4,17 @@ import ProductCard from '@/components/ProductCard';
 async function getProducts() {
   // Use server-side API URL for Docker, fallback to client URL for development
   const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-  const res = await fetch(`${apiUrl}/products`, { cache: 'no-store' });
-  if (!res.ok) {
-    throw new Error('Failed to fetch products');
+  try {
+    const res = await fetch(`${apiUrl}/products`, { cache: 'no-store' });
+    if (!res.ok) {
+      console.error('Failed to fetch products:', res.status, res.statusText);
+      return [];
+    }
+    return res.json();
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    return [];
   }
-  return res.json();
 }
 
 export default async function Home() {
