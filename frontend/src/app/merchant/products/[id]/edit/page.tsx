@@ -2,11 +2,12 @@
 
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function EditProduct({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
+    const { user, token, isAuthenticated, isLoading: authLoading, login, isMerchant } = useAuth();
     const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(null);
-    const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState('');
@@ -29,28 +30,33 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
     }, [params]);
 
     useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        if (!storedUser) {
-            router.push('/auth/login');
+        if (authLoading) return;
+
+        if (!isAuthenticated) {
+            login();
             return;
         }
-        const parsedUser = JSON.parse(storedUser);
-        if (parsedUser.role !== 'MERCHANT') {
+
+        if (!isMerchant) {
             router.push('/');
             return;
         }
-        setUser(parsedUser);
-    }, []);
+    }, [isAuthenticated, authLoading, isMerchant, login, router]);
 
     useEffect(() => {
-        if (resolvedParams?.id) {
+        if (resolvedParams?.id && isAuthenticated && token) {
             fetchProduct(resolvedParams.id);
         }
-    }, [resolvedParams]);
+    }, [resolvedParams, isAuthenticated, token]);
 
     const fetchProduct = async (id: string) => {
         try {
-            const res = await fetch(`http://localhost:8080/products/${id}`);
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+            const res = await fetch(`${apiUrl}/products/${id}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
             if (res.ok) {
                 const product = await res.json();
                 setFormData({
@@ -60,11 +66,11 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                     stock: product.stock.toString(),
                     category: product.category,
                     brand: product.brand,
-                    colors: product.colors.join(', '),
-                    sizes: product.sizes.join(', '),
+                    colors: Array.isArray(product.colors) ? product.colors.join(', ') : product.colors,
+                    sizes: Array.isArray(product.sizes) ? product.sizes.join(', ') : product.sizes,
                 });
-                setUploadedImages(product.images);
-                setImagePreviews(product.images);
+                setUploadedImages(product.images || []);
+                setImagePreviews(product.images || []);
             } else {
                 setError('Failed to fetch product');
             }
@@ -87,8 +93,12 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                 formData.append('images', file);
             });
 
-            const res = await fetch('http://localhost:8080/upload', {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+            const res = await fetch(`${apiUrl}/upload`, {
                 method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
                 body: formData,
             });
 
@@ -144,9 +154,13 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                 sizes: formData.sizes.split(',').map(s => s.trim()).filter(s => s),
             };
 
-            const res = await fetch(`http://localhost:8080/products/${resolvedParams?.id}`, {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+            const res = await fetch(`${apiUrl}/products/${resolvedParams?.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify(productData),
             });
 
@@ -162,7 +176,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
         }
     };
 
-    if (!user || loading) return <div className="text-center py-12">Loading...</div>;
+    if (authLoading || !user || loading) return <div className="text-center py-12">Loading...</div>;
 
     return (
         <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
