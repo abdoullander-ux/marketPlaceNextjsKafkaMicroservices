@@ -70,7 +70,7 @@ app.post('/sales', authenticateKeycloak, requireAnyGroup(['client', 'owner']), a
         const totalPrice = product.discountPrice ? product.discountPrice * quantity : product.price * quantity;
         const commissionRate = 0.05; // 5% default
         const commission = totalPrice * commissionRate;
-        const merchantId = product.merchantId || 1;
+        const merchantId = product.merchantId || "1";
 
         // Process Payment
         const paymentSuccess = await processPayment(mvolaNumber, totalPrice);
@@ -103,12 +103,12 @@ app.post('/sales', authenticateKeycloak, requireAnyGroup(['client', 'owner']), a
 // Get sales by merchant - Protected (merchants can see their own, owners can see all)
 app.get('/sales/merchant/:merchantId', authenticateKeycloak, requireMerchantOrOwner, async (req, res) => {
     try {
-        const requestedMerchantId = parseInt(req.params.merchantId);
+        const requestedMerchantId = req.params.merchantId;
         const userGroups = req.user.groups || [];
         const isOwner = userGroups.some(g => g === '/owner' || g === 'owner');
 
         // If not owner, can only see own sales
-        if (!isOwner && req.user.id !== requestedMerchantId.toString()) {
+        if (!isOwner && req.user.id !== requestedMerchantId) {
             return res.status(403).json({ error: 'You can only view your own sales' });
         }
 

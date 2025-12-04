@@ -458,7 +458,7 @@ app.get('/featured', async (req, res) => {
 app.get('/products/merchant/:merchantId', async (req, res) => {
     try {
         const products = await prisma.product.findMany({
-            where: { merchantId: parseInt(req.params.merchantId) },
+            where: { merchantId: req.params.merchantId },
             orderBy: { createdAt: 'desc' }
         });
         res.json(products);
@@ -485,7 +485,7 @@ app.post('/products', authenticateKeycloak, requireMerchantOrOwner, async (req, 
                 colors: colors || [],
                 sizes: sizes || [],
                 tags: tags || [],
-                merchantId: merchantId ? parseInt(merchantId) : 1
+                merchantId: merchantId ? merchantId : "1"
             },
         });
 

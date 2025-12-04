@@ -25,6 +25,6 @@ model Product {
   sizes         Json     // Storing as JSON array of strings ["S", "M", "L"]
   tags          Json     // Storing as JSON array of strings ["trending", "sale"]
   colorImages   Json?    // Storing as JSON object {"White": ["img1.jpg"], "Black": ["img2.jpg"]}
-  merchantId    Int      @default(1) // Default to admin/first merchant for now
+  merchantId    String   @default("1") // Default to admin/first merchant for now
   createdAt     DateTime @default(now())
 }
