@@ -35,15 +35,37 @@ services:
     networks:
       - microservices-net
 
-  nginx:
-    image: nginx:latest
+  apisix:
+    image: apache/apisix:3.8.0-debian
     ports:
-      - "8080:80"
+      - "80:9080"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./apisix/config.yaml:/usr/local/apisix/conf/config.yaml:ro
+      - ./apisix/apisix.yaml:/usr/local/apisix/conf/apisix.yaml:ro
     depends_on:
       - product-service
       - sales-service
+    networks:
+      - microservices-net
+
+  # nginx:
+  #   image: nginx:alpine
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+  #   depends_on:
+  #     - product-service
+  #     - sales-service
+  #   networks:
+  #     - microservices-net
+
+  # etcd is not strictly needed for standalone mode but kept as per plan request
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.0
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379
     networks:
       - microservices-net
 
@@ -120,21 +142,21 @@ services:
     build:
       context: ./frontend
       args:
-        NEXT_PUBLIC_API_URL: "http://192.168.226.128:8080"
+        NEXT_PUBLIC_API_URL: "http://192.168.226.128:80"
         NEXT_PUBLIC_KEYCLOAK_URL: "http://192.168.226.128:8081"
         NEXT_PUBLIC_KEYCLOAK_REALM: "marketplace"
         NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: "marketplace-frontend"
     ports:
       - "3000:3000"
     environment:
-      NEXT_PUBLIC_API_URL: "http://192.168.226.128:8080"
-      API_URL: "http://nginx:80"
+      NEXT_PUBLIC_API_URL: "http://192.168.226.128:80"
+      API_URL: "http://apisix:9080"
       NEXT_PUBLIC_KEYCLOAK_URL: "http://192.168.226.128:8081"
       KEYCLOAK_URL: "http://keycloak:8080"
       NEXT_PUBLIC_KEYCLOAK_REALM: "marketplace"
       NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: "marketplace-frontend"
     depends_on:
-      - nginx
+      - apisix
       - keycloak
     networks:
       - microservices-net
