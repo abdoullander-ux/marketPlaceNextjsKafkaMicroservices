@@ -122,6 +122,39 @@ app.get('/sales/merchant/:merchantId', authenticateKeycloak, requireMerchantOrOw
     }
 });
 
+// Update Order Status
+app.put('/orders/:id/status', async (req, res) => {
+    const { id } = req.params;
+    const { status, orderStatus } = req.body;
+    try {
+        const data = {};
+        if (status) data.status = status;
+        if (orderStatus) data.orderStatus = orderStatus;
+
+        const sale = await prisma.sale.update({
+            where: { id: parseInt(id) },
+            data
+        });
+        res.json(sale);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update order status' });
+    }
+});
+
+// Get Orders for Merchant
+app.get('/orders/merchant/:merchantId', async (req, res) => {
+    const { merchantId } = req.params;
+    try {
+        const sales = await prisma.sale.findMany({
+            where: { merchantId: merchantId },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.json(sales);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch merchant orders' });
+    }
+});
+
 app.listen(port, () => {
-    console.log(`Sales Service listening on port ${port}`);
+    console.log(`Sales Service listening at http://localhost:${port}`);
 });

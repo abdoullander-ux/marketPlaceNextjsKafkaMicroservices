@@ -14,7 +14,8 @@ model Sale {
   totalPrice Float
   merchantId String      @default("1")
   commission Float    @default(0.0)
-  status     String   @default("PENDING") // PENDING, COMPLETED, FAILED
+  status     String   @default("PENDING") // PENDING, COMPLETED, FAILED (Payment status)
+  orderStatus String  @default("ORDERED") // ORDERED, SHIPPING, DELIVERED, COMPLETED (Delivery status)
   mvolaNumber String?
   createdAt DateTime @default(now())
 }

@@ -25,6 +25,25 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
         notFound();
     }
 
+    // Fetch merchant info
+    let merchant = undefined;
+    if (product.merchantId) {
+        try {
+            const res = await fetch(`http://user-service:3003/merchant/${product.merchantId}`, {
+                cache: 'no-store',
+            });
+            if (res.ok) {
+                merchant = await res.json();
+            }
+        } catch (error) {
+            console.error('Failed to fetch merchant info', error);
+        }
+    }
+
+    if (!product) {
+        notFound();
+    }
+
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Breadcrumb */}
@@ -44,7 +63,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
             {/* Product Detail */}
             <div className="py-6">
-                <ProductDetail product={product} />
+                <ProductDetail product={product} merchant={merchant} />
             </div>
 
             {/* Similar Articles Section */}

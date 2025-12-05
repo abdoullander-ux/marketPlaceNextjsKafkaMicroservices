@@ -351,8 +351,8 @@ async function seed(retries = 5) {
 
 
 // Routes
-// Image Upload Endpoint - Protected (merchants and owners only)
-app.post('/upload', authenticateKeycloak, requireMerchantOrOwner, upload.array('images', 10), async (req, res) => {
+// Image Upload Endpoint - Public (for registration and products)
+app.post('/upload', upload.array('images', 10), async (req, res) => {
     try {
         if (!req.files || req.files.length === 0) {
             return res.status(400).json({ error: 'No images uploaded' });

@@ -34,16 +34,13 @@ export const registerMerchant = async (req: Request, res: Response) => {
             enabled: true,
         });
 
-        // Add user to merchant group
-        await addUserToGroup(keycloakUserId, 'merchant');
-
         // Create user in local database
         const user = await prisma.user.create({
             data: {
                 email,
                 password: '', // Password is managed by Keycloak
                 name,
-                role: 'MERCHANT',
+                role: 'BUYER', // Default role until approved
             },
         });
 
@@ -51,9 +48,13 @@ export const registerMerchant = async (req: Request, res: Response) => {
         await prisma.merchantProfile.create({
             data: {
                 userId: user.id,
+                shopName,
+                logo: req.body.logo,
+                address: req.body.address,
                 mvolaNumber: mvolaNumber || null,
                 commissionRate: 5.0,
                 balance: 0.0,
+                status: 'PENDING'
             },
         });
 

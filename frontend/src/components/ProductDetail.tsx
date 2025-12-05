@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-
 import { useRouter } from 'next/navigation';
 
 interface Product {
@@ -19,9 +18,17 @@ interface Product {
     colors: string[];
     sizes: string[];
     colorImages?: Record<string, string[]>;
+    merchantId?: string;
 }
 
-export default function ProductDetail({ product }: { product: Product }) {
+interface Merchant {
+    shopName?: string;
+    logo?: string;
+    address?: string;
+    status?: string;
+}
+
+export default function ProductDetail({ product, merchant }: { product: Product, merchant?: Merchant }) {
     // Get initial images based on first color if colorImages exists
     const getImagesForColor = (color: string) => {
         if (product.colorImages && product.colorImages[color]) {
@@ -46,7 +53,7 @@ export default function ProductDetail({ product }: { product: Product }) {
             color: selectedColor,
             size: selectedSize,
             quantity: quantity,
-            merchantId: (product as any).merchantId || 1 // Assuming merchantId might be missing in type definition
+            merchantId: product.merchantId || "1"
         };
 
         const storedCart = localStorage.getItem('cart');
@@ -268,22 +275,26 @@ export default function ProductDetail({ product }: { product: Product }) {
 
                     <div className="border-2 border-gray-200 p-4 rounded-lg">
                         <div className="flex items-center gap-3 mb-3">
-                            <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-400 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                                U
-                            </div>
+                            {merchant?.logo ? (
+                                <img src={merchant.logo} alt={merchant.shopName} className="w-12 h-12 rounded-full object-cover" />
+                            ) : (
+                                <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-400 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                    {merchant?.shopName ? merchant.shopName.charAt(0).toUpperCase() : 'M'}
+                                </div>
+                            )}
                             <div className="flex-1">
-                                <div className="text-sm font-bold text-gray-900">Boutique officielle UYE</div>
-                                <div className="text-xs text-gray-500">Vendeur vérifié</div>
+                                <div className="text-sm font-bold text-gray-900">{merchant?.shopName || 'Unknown Merchant'}</div>
+                                <div className="text-xs text-gray-500">{merchant?.status === 'APPROVED' ? 'Vendeur vérifié' : 'Vendeur'}</div>
                             </div>
                         </div>
                         <div className="flex gap-4 text-xs text-gray-600 mb-3">
                             <div className="flex flex-col items-center">
                                 <span className="font-bold text-green-600">95%</span>
-                                <span>Positif</span>
+                                <span className="text-center">Positif</span>
                             </div>
                             <div className="flex flex-col items-center">
                                 <span className="font-bold text-blue-600">10K+</span>
-                                <span>Abonnés</span>
+                                <span className="text-center">Abonnés</span>
                             </div>
                         </div>
                         <button className="w-full border-2 border-orange-500 text-orange-600 font-semibold py-2 rounded-full hover:bg-orange-50 transition text-sm">

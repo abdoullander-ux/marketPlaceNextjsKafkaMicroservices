@@ -22,6 +22,10 @@ model MerchantProfile {
   id             Int      @id @default(autoincrement())
   userId         Int      @unique
   user           User     @relation(fields: [userId], references: [id])
+  shopName       String?
+  logo           String?
+  address        String?
+  status         String   @default("PENDING") // PENDING, APPROVED, REJECTED
   commissionRate Float    @default(5.0)
   balance        Float    @default(0.0)
   mvolaNumber    String?

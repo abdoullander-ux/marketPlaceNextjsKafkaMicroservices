@@ -42,6 +42,12 @@ export default function Header() {
                         ) : isAuthenticated && user ? (
                             <>
                                 <span className="font-semibold">👋 {user.name}</span>
+                                {!isMerchant && !isOwner && (
+                                    <>
+                                        <span className="text-gray-200">|</span>
+                                        <Link href="/merchant/register" className="hover:underline font-bold">Become a Seller</Link>
+                                    </>
+                                )}
                                 {isMerchant && (
                                     <>
                                         <span className="text-gray-200">|</span>
@@ -59,6 +65,8 @@ export default function Header() {
                             </>
                         ) : (
                             <>
+                                <Link href="/merchant/register" className="hover:underline font-semibold">Become a Seller</Link>
+                                <span className="text-gray-200">|</span>
                                 <button onClick={login} className="hover:underline">Login</button>
                             </>
                         )}
